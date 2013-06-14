@@ -65,15 +65,9 @@ void processCommand(){
       if( (strEqual(data[2],"w")) || (strEqual(data[2],"c")) ){
         log(" > threshold type : ");
         logln(data[2]);
-        Serial.println(convertThresholdValue(data[3]));
-        //char svalue[MAX_COLS] = data[3];
-        //int tvalue = atoi(svalue[3]);
-        //if ( tvalue > 0 ){
-        //  logln(tvalue)
-        //}else{
-        //  log("Invalid threshold value : ");
-        //  logln(data[3]);
-        //}  
+        int ivalue = atoi(data[3]);
+        log(" > Threshold value : ");
+        Serial.println(ivalue);
       }else{
         logln(" > Invalid threshold type (should be w or c)");
       }
