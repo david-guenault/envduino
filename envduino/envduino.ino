@@ -56,9 +56,9 @@ const boolean DEBUG = 1;
 
 void processCommand(){
   
-  logln(" > Processing command : ");
+  log(" > Processing command : ");
   if (strEqual(data[0], "t")){ // process threshold command
-    logln(" > Command set threshold");
+    logln("set threshold");
     if( (strEqual(data[1], "t")) || (strEqual(data[1], "h")) || (strEqual(data[1], "p")) || (strEqual(data[1], "e")) ){ // verify sensor type
       log(" > sensor : ");
       logln(data[1]);
@@ -66,8 +66,7 @@ void processCommand(){
         log(" > threshold type : ");
         logln(data[2]);
         int ivalue = atoi(data[3]);
-        log(" > Threshold value : ");
-        Serial.println(ivalue);
+        saveThreshold(data[1],data[2], ivalue);
       }else{
         logln(" > Invalid threshold type (should be w or c)");
       }
@@ -77,6 +76,8 @@ void processCommand(){
   }else{
     logln(" > Unknown command");
   }
+  clearMessageBuffer();
+  clearData();
 }
 
 /*****************************************************************
@@ -84,6 +85,11 @@ void processCommand(){
 * UTILITY FUNCTIONS
 *
 *****************************************************************/
+
+void saveThreshold(char* sensor, char* thresholdType, int Value){
+  logln("Saving threshold");  
+}
+
 boolean strEqual(char* str1, char* str2){
   if (strcmp(data[1], "t") == 0){
     return true;
@@ -189,7 +195,6 @@ void loop(){
     logln(message);
     // you've got a message !
     splitMessage();
-    clearMessageBuffer();
     processCommand();
     messageComplete = false; 
   }
