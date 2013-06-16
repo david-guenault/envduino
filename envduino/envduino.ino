@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <EEPROM.h>
 
 // 2 dimensions char array used to store data read from serail
 const int MAX_COLS = 5; 
@@ -19,6 +19,15 @@ boolean messageComplete = false;
 // do we need to print debug messages
 const boolean DEBUG = 1;
 
+/*
+* 0 => temperature warning threshold
+* 1 => temperature criticial threshold
+* 2 => humidity warning threshold
+* 3 => humidity critical threshold
+* 4 => pressure warning threshold
+* 4 => pressure critical threshold
+*/
+int thresholds[6] = {-1,-1,-1,-1,-1,-1};
 
 /*****************************************************************
  * Command protocol
@@ -66,13 +75,21 @@ void processCommand(){
         log(" > threshold type : ");
         logln(data[2]);
         int ivalue = atoi(data[3]);
-        saveThreshold(data[1],data[2], ivalue);
+        setThreshold(data[1][0],data[2][0],ivalue);
       }else{
         logln(" > Invalid threshold type (should be w or c)");
       }
     }else{
       logln(" > Invalid sensor");
     }
+  }else if ( strEqual(data[0], "w")) {
+    logln("Save to eeprom");
+  }else if ( strEqual(data[0], "r")) {
+    logln(" > read configuration : ");
+    char b[255];
+    logln(" > Thresholds configuration");
+    sprintf(b, " > Temperature : w=%d, c=%d | Humidity : w=%d,c=%d | Pressure : w=%d,c=%d",thresholds[0],thresholds[1],thresholds[2],thresholds[3],thresholds[4],thresholds[5]);
+    logln(b);    
   }else{
     logln(" > Unknown command");
   }
@@ -80,18 +97,65 @@ void processCommand(){
   clearData();
 }
 
+
 /*****************************************************************
 *
 * UTILITY FUNCTIONS
 *
 *****************************************************************/
 
-void saveThreshold(char* sensor, char* thresholdType, int Value){
-  logln("Saving threshold");  
+void setThreshold(char sensor, char threshold, int value){
+  
+  /*
+  * sensor (t,h,p)
+  * threshold (w,c)
+  * value (int threshold value)
+  */
+  
+  /*
+  * eeprom storage model
+  *  2 bytes -> warning temperature
+  *  2 bytes -> critical temperature
+  *
+  * t(w,c) : 2 bytes (0,1) thresholds for temperature sensor
+  * t(w,c) : 2 bytes (2,3) thresholds for humidity sensor
+  * t(w,c) : 2 bytes (4,5) thresholds for pressure sensor
+  */
+
+  int p1 = -1;
+  char code[] = { sensor, threshold, '\0' };
+  
+  logln(" > Saving threshold");  
+
+  if ( strEqual(code,"tw") ) p1 = 0;
+  if ( strEqual(code,"tc") ) p1 = 1;
+  if ( strEqual(code,"hw") ) p1 = 2;
+  if ( strEqual(code,"hc") ) p1 = 3;
+  if ( strEqual(code,"pw") ) p1 = 4;
+  if ( strEqual(code,"pc") ) p1 = 5;
+
+  char b[10];
+  sprintf(b,"%d",p1);
+  
+  log(" > code is : ");
+  log(code);
+  log(", position is : ");
+  logln(b);
+  
+  if ( p1 >= 0 ){
+    log(" > Set Threshold : ");
+    sprintf(b,"%d",value);
+    logln(b);
+    thresholds[p1] = value;
+    //EEPROM.write(p1,(bytye)value);
+  }else{
+    logln(" > Error while writing threshold value"); 
+  }
+  
 }
 
 boolean strEqual(char* str1, char* str2){
-  if (strcmp(data[1], "t") == 0){
+  if (strcmp(str1, str2) == 0){
     return true;
   }else{
     return false;
@@ -191,7 +255,7 @@ void setup(){
 
 void loop(){
   if ( messageComplete ){
-    log("Message Complete : ");
+    log(" > Message Complete : ");
     logln(message);
     // you've got a message !
     splitMessage();
