@@ -17,7 +17,7 @@ const char SEPARATOR = ';';
 boolean messageComplete = false;
 
 // do we need to print debug messages
-const boolean DEBUG = 1;
+boolean DEBUG = 1;
 
 /*
 * 0 => temperature warning threshold
@@ -82,8 +82,22 @@ void processCommand(){
     }else{
       logln(" > Invalid sensor");
     }
+  }else if ( strEqual(data[0], "d")) {
+    if( (strEqual(data[1],"0")) || (strEqual(data[1],"1")) ){
+      log(" > Setting debug mode to : ");
+      logln(data[1]);
+      boolean debug=false;
+      if( strEqual(data[1],"0") ) debug = false;
+      if( strEqual(data[1],"1") ) debug = true;
+      setDebug(debug);
+    }else{
+      log(" > Unknown debug mode :");
+      logln(data[1]);
+    }
   }else if ( strEqual(data[0], "w")) {
     logln("Save to eeprom");
+  } else if ( strEqual(data[0], "p")) {
+    Serial.println("pong");
   }else if ( strEqual(data[0], "r")) {
     logln(" > read configuration : ");
     char b[255];
@@ -104,6 +118,16 @@ void processCommand(){
 *
 *****************************************************************/
 
+// Active / Deactivate debug mode 
+boolean setDebug(boolean debug){
+  DEBUG = debug;  
+}
+// check a sensor is present by getting data from it
+boolean checkSensor(char sensor){
+  return true; 
+}
+
+// set a sensor threshold
 void setThreshold(char sensor, char threshold, int value){
   
   /*
@@ -154,6 +178,7 @@ void setThreshold(char sensor, char threshold, int value){
   
 }
 
+// check equality of two char arrays
 boolean strEqual(char* str1, char* str2){
   if (strcmp(str1, str2) == 0){
     return true;
@@ -230,15 +255,15 @@ void splitMessage(){
 }
 
 void serialEvent(){
-  clearData();
-  while (Serial.available() && index < MAX_MESSAGE_SIZE) {
-    message[index] = (char)Serial.read();
-    if (message[index] == '\n' || message[index] == '\r') {
-      messageComplete = true; 
-      break;
-    } 
-    index++;
-  }    
+//  clearData();
+//  while (Serial.available() && index < MAX_MESSAGE_SIZE) {
+//    message[index] = (char)Serial.read();
+//    if (message[index] == '\n' || message[index] == '\r') {
+//      messageComplete = true; 
+//      break;
+//    } 
+//    index++;
+//  }    
 }
 
 /*****************************************************************
@@ -254,14 +279,16 @@ void setup(){
 }
 
 void loop(){
-  if ( messageComplete ){
-    log(" > Message Complete : ");
-    logln(message);
-    // you've got a message !
-    splitMessage();
-    processCommand();
-    messageComplete = false; 
-  }
+  Serial.print(".");
+  delay(1000);
+//  if ( messageComplete ){
+//    log(" > Message Complete : ");
+//    logln(message);
+//    // you've got a message !
+//    splitMessage();
+//    processCommand();
+//    messageComplete = false; 
+//  }
 }
 
 
