@@ -66,7 +66,6 @@ class EnvduinoShell(cmd.Cmd):
     prompt = "> "
     ser = None;
 
-
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.do_connect("/dev/ttyACM0 9600")
@@ -74,13 +73,6 @@ class EnvduinoShell(cmd.Cmd):
 
     def emptyline(self):
         return
-
-    def readSerial(self):
-        sys.stdout.write("")
-        # if self.ser.isOpen():
-
-        # else:
-        #     return "Port is not open"
 
     def do_connect(self, line):
         '''
