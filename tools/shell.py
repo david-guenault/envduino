@@ -22,18 +22,65 @@ import os
 import cmd
 import sys
 import time
-import serial
+from serial import Serial
 import io
+from multiprocessing import Process, Queue, TimeoutError
+
+class EnhancedSerial(Serial):
+    def __init__(self, *args, **kwargs):
+        #ensure that a reasonable timeout is set
+        timeout = kwargs.get('timeout',0.1)
+        if timeout < 0.01: timeout = 0.1
+        kwargs['timeout'] = timeout
+        Serial.__init__(self, *args, **kwargs)
+        self.buf = ''
+        
+    def readline(self, maxsize=None, timeout=1):
+        """maxsize is ignored, timeout in seconds is the max time that is way for a complete line"""
+        tries = 0
+        while 1:
+            self.buf += self.read(512)
+            pos = self.buf.find('\n')
+            if pos >= 0:
+                line, self.buf = self.buf[:pos+1], self.buf[pos+1:]
+                return line
+            tries += 1
+            if tries * self.timeout > timeout:
+                break
+        line, self.buf = self.buf, ''
+        return line
+
+    def readlines(self, sizehint=None, timeout=1):
+        """read all lines that are available. abort after timout
+        when no more data arrives."""
+        lines = []
+        while 1:
+            line = self.readline(timeout=timeout)
+            if line:
+                lines.append(line)
+            if not line or line[-1:] != '\n':
+                break
+        return lines
 
 class EnvduinoShell(cmd.Cmd):
     prompt = "> "
     ser = None;
 
+
     def __init__(self):
         cmd.Cmd.__init__(self)
+        self.do_connect("/dev/ttyACM0 9600")
+        self.do_connectionState()
 
     def emptyline(self):
         return
+
+    def readSerial(self):
+        sys.stdout.write("")
+        # if self.ser.isOpen():
+
+        # else:
+        #     return "Port is not open"
 
     def do_connect(self, line):
         '''
@@ -54,13 +101,12 @@ class EnvduinoShell(cmd.Cmd):
                 return
 
             print "Connecting to %s with a baudrate of %s" % (dev,baudrate)
-            self.ser = serial.Serial(dev,int(baudrate),timeout=1)
-            self.ser.readline()
+            self.ser = EnhancedSerial(dev,int(baudrate),timeout=2)
             print "Connection OK"
         except:        
             print "Unable to connect to serial port"
 
-    def do_connectionState(self,line):
+    def do_connectionState(self,line=""):
         '''
         Check if we are connected to an envduino module
         Syntax: connectionState
@@ -78,11 +124,11 @@ class EnvduinoShell(cmd.Cmd):
 
         return
 
-    def do_setDebug(self,line):
+    def do_debug(self,line):
         '''
         Set envduino debug mode on/off
-        Syntax: setDebug [on|off]
-        > setDebug on
+        Syntax: debug [on|off]
+        > debug on
         '''
         debug = "E"
         if line == "on":
@@ -94,11 +140,24 @@ class EnvduinoShell(cmd.Cmd):
 
         if not debug == "E":
             if self.ser.isOpen() and self.ser.writable():
-                self.ser.write("d;%s" % (debug)) 
+                self.ser.write("d;%s\n" % (debug)) 
+                print ''.join(self.ser.readlines())                
             else:
                 print "Unable to set debug mode (either because not connected or port not writable"
 
         return
+
+    def do_raw(self,line=""):
+        '''
+        Send raw commands to envduino
+        Syntax: raw data
+        > raw t;t;w;20
+        '''
+        if self.ser.isOpen() and self.ser.writable():
+            self.ser.write("%s\n" % (line)) 
+            print ''.join(self.ser.readlines())                            
+        else:
+            print "Unable to send command to envduino"
 
 
     def do_ping(self,line=""):
@@ -113,24 +172,20 @@ class EnvduinoShell(cmd.Cmd):
             return
 
         if self.ser.isOpen() and self.ser.writable():
-
-            self.ser.write("t;t;w;20")
-            time.sleep(2)
-            while self.ser.inWaiting() != 0:
-                print self.ser.read(1)            
-
+            self.ser.write("p\n")
+            print ''.join(self.ser.readlines())
         else:
             print "Unable to ping envduino"
 
 
-    def do_setThreshold(self,line):
+    def do_threshold(self,line):
         '''
         Set a sensor threshold 
-        Syntax: setThreshold sensor type value
+        Syntax: threshold sensor type value
             sensor should be on of temperature, humidity, pressure
             type should be on of warning, critical
             value should be an integer
-        > setThreshold temperature warning 25
+        > threshold temperature warning 25
         '''
         (sensor,type,value) = line.split(" ")
         if not sensor in ("temperature","humidity","pressure"):
