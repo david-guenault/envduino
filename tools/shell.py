@@ -62,14 +62,26 @@ class EnhancedSerial(Serial):
                 break
         return lines
 
+    def writeAndRead(self, line):
+        if self.isOpen() and self.ser.writable():
+            self.write(line+"\n")
+            return ''.join(self.readlines())
+        else:
+            return "Serial port not available"
+
+
 class EnvduinoShell(cmd.Cmd):
     prompt = "> "
     ser = None;
 
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.do_connect("/dev/ttyACM0 9600")
-        self.do_connectionState()
+        p=1
+        while True:
+            try:
+                print serial.device(p)
+            except: 
+                break
 
     def emptyline(self):
         return
@@ -84,16 +96,17 @@ class EnvduinoShell(cmd.Cmd):
         try:
             (dev,baudrate) = line.split(" ")
 
-            # check if user is allowed to read/write serial port
-            myGroups = os.getgroups()
-            devGroup = os.stat(dev).st_gid
+            if os.name == "posix":
+                # check if user is allowed to read/write serial port
+                myGroups = os.getgroups()
+                devGroup = os.stat(dev).st_gid
 
-            if not devGroup in myGroups:
-                print "You are not in the groups of %s. Please add your user to group %s" % (dev,devGroup)
-                return
+                if not devGroup in myGroups:
+                    print "You are not in the groups of %s. Please add your user to group %s" % (dev,devGroup)
+                    return
 
             print "Connecting to %s with a baudrate of %s" % (dev,baudrate)
-            self.ser = EnhancedSerial(dev,int(baudrate),timeout=2)
+            self.ser = EnhancedSerial(dev,baudrate=int(baudrate),timeout=2)
             print "Connection OK"
         except:        
             print "Unable to connect to serial port"
