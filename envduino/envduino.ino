@@ -17,7 +17,7 @@ const char SEPARATOR = ';';
 boolean messageComplete = false;
 
 // do we need to print debug messages
-boolean DEBUG = 1;
+boolean DEBUG = 0;
 
 /*
 * 0 => temperature warning threshold
@@ -84,7 +84,7 @@ void processCommand(){
     }
   }else if ( strEqual(data[0], "d")) {
     if( (strEqual(data[1],"0")) || (strEqual(data[1],"1")) ){
-      log(" > Setting debug mode to : ");
+      log("\n > Setting debug mode to : ");
       logln(data[1]);
       boolean debug=false;
       if( strEqual(data[1],"0") ) debug = false;
@@ -97,13 +97,14 @@ void processCommand(){
   }else if ( strEqual(data[0], "w")) {
     logln("Save to eeprom");
   } else if ( strEqual(data[0], "p")) {
-    Serial.println("pong");
+    logln("ping");
+    Serial.println(" > pong");
   }else if ( strEqual(data[0], "r")) {
     logln(" > read configuration : ");
     char b[255];
     logln(" > Thresholds configuration");
     sprintf(b, " > Temperature : w=%d, c=%d | Humidity : w=%d,c=%d | Pressure : w=%d,c=%d",thresholds[0],thresholds[1],thresholds[2],thresholds[3],thresholds[4],thresholds[5]);
-    logln(b);    
+    Serial.println(b);    
   }else{
     logln(" > Unknown command");
   }
@@ -121,6 +122,10 @@ void processCommand(){
 // Active / Deactivate debug mode 
 boolean setDebug(boolean debug){
   DEBUG = debug;  
+  log(" > Debug mode : ");
+  if (debug) logln("on");
+  if (!debug) logln("off");
+  return true;
 }
 // check a sensor is present by getting data from it
 boolean checkSensor(char sensor){
@@ -190,7 +195,10 @@ boolean strEqual(char* str1, char* str2){
 void logln(char* dlog){
   log(dlog);
   log("\n");
-  
+}
+
+void eof(){
+  Serial.write("\0");
 }
 
 void log(char* dlog){
@@ -255,15 +263,15 @@ void splitMessage(){
 }
 
 void serialEvent(){
-//  clearData();
-//  while (Serial.available() && index < MAX_MESSAGE_SIZE) {
-//    message[index] = (char)Serial.read();
-//    if (message[index] == '\n' || message[index] == '\r') {
-//      messageComplete = true; 
-//      break;
-//    } 
-//    index++;
-//  }    
+  clearData();
+  while (Serial.available() && index < MAX_MESSAGE_SIZE) {
+    message[index] = (char)Serial.read();
+    if (message[index] == '\n' || message[index] == '\r') {
+      messageComplete = true; 
+      break;
+    } 
+    index++;
+  }    
 }
 
 /*****************************************************************
@@ -279,16 +287,14 @@ void setup(){
 }
 
 void loop(){
-  Serial.print(".");
-  delay(1000);
-//  if ( messageComplete ){
-//    log(" > Message Complete : ");
-//    logln(message);
-//    // you've got a message !
-//    splitMessage();
-//    processCommand();
-//    messageComplete = false; 
-//  }
+  if ( messageComplete ){
+    log(" > Message Complete : ");
+    logln(message);
+    // you've got a message !
+    splitMessage();
+    processCommand();
+    messageComplete = false; 
+  }
 }
 
 
