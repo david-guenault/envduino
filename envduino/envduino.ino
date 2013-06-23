@@ -1,4 +1,15 @@
 #include <EEPROM.h>
+#include "DHT.h"
+
+// DHTXX
+#define DHTPIN 2         // what pin we're connected to
+#define DHTTYPE DHT22    // DHT 22  (AM2302)
+//#define DHTTYPE DHT11  // DHT 11 
+//#define DHlTTYPE DHT21 // DHT 21 (AM2301)
+DHT dht(DHTPIN, DHTTYPE);
+
+//serial speed
+const int BAUDRATE = 9600;
 
 // 2 dimensions char array used to store data read from serail
 const int MAX_COLS = 5; 
@@ -17,7 +28,13 @@ const char SEPARATOR = ';';
 boolean messageComplete = false;
 
 // do we need to print debug messages
-boolean DEBUG = 0;
+boolean DEBUG = false;
+
+//PINS FOR LEDS
+const int  RED = 22;
+const int  GREEN = 28;
+const int  YELLOW = 26;
+const boolean  USELEDS = true;
 
 /*
 * 0 => temperature warning threshold
@@ -27,7 +44,7 @@ boolean DEBUG = 0;
 * 4 => pressure warning threshold
 * 4 => pressure critical threshold
 */
-int thresholds[6] = {-1,-1,-1,-1,-1,-1};
+int thresholds[6] = {-9999,-9999,-9999,-9999,-9999,-9999};
 
 /*****************************************************************
  * Command protocol
@@ -57,6 +74,7 @@ int thresholds[6] = {-1,-1,-1,-1,-1,-1};
  *     if both warning and critical thresholds are set 
  *       raise a warning if metric >= warning threshold and metric < critical threshold
  *       raise a critical if metric >= critical threshold
+ *  
  * 
  * getThresholds
  * ~~~~~~~~~~~~~
@@ -64,54 +82,121 @@ int thresholds[6] = {-1,-1,-1,-1,-1,-1};
  ********************************************************************/
 
 void processCommand(){
-  
-  log(" > Processing command : ");
+  char b[255];  
+  log("Processing command : ");
   if (strEqual(data[0], "t")){ // process threshold command
     logln("set threshold");
     if( (strEqual(data[1], "t")) || (strEqual(data[1], "h")) || (strEqual(data[1], "p")) || (strEqual(data[1], "e")) ){ // verify sensor type
-      log(" > sensor : ");
-      logln(data[1]);
+      sprintf(b,"Sensor : %s",data[1]);
+      logln(b);
       if( (strEqual(data[2],"w")) || (strEqual(data[2],"c")) ){
-        log(" > threshold type : ");
-        logln(data[2]);
+        sprintf(b,"threshold type : %s",data[2]);
+        logln(b);
         int ivalue = atoi(data[3]);
         setThreshold(data[1][0],data[2][0],ivalue);
       }else{
-        logln(" > Invalid threshold type (should be w or c)");
+        logln("Invalid threshold type (should be w or c)");
       }
     }else{
-      logln(" > Invalid sensor");
+      logln("Invalid sensor");
     }
   }else if ( strEqual(data[0], "d")) {
     if( (strEqual(data[1],"0")) || (strEqual(data[1],"1")) ){
-      log("\n > Setting debug mode to : ");
-      logln(data[1]);
       boolean debug=false;
       if( strEqual(data[1],"0") ) debug = false;
       if( strEqual(data[1],"1") ) debug = true;
       setDebug(debug);
+      char b[30];
+      sprintf(b,"Setting debug mode to : %s\n",data[1]);
+      logln(b);
     }else{
-      log(" > Unknown debug mode :");
+      log("Unknown debug mode :");
       logln(data[1]);
     }
   }else if ( strEqual(data[0], "w")) {
     logln("Save to eeprom");
   } else if ( strEqual(data[0], "p")) {
-    logln("ping");
-    Serial.println(" > pong");
+    Serial.println("pong");
   }else if ( strEqual(data[0], "r")) {
-    logln(" > read configuration : ");
-    char b[255];
-    logln(" > Thresholds configuration");
-    sprintf(b, " > Temperature : w=%d, c=%d | Humidity : w=%d,c=%d | Pressure : w=%d,c=%d",thresholds[0],thresholds[1],thresholds[2],thresholds[3],thresholds[4],thresholds[5]);
-    Serial.println(b);    
+    logln("read configuration : ");
+    sprintf(b, "Temperature : w=%d, c=%d | Humidity : w=%d,c=%d | Pressure : w=%d,c=%d",thresholds[0],thresholds[1],thresholds[2],thresholds[3],thresholds[4],thresholds[5]);
+    Serial.println(b);  
+  }else if ( strEqual(data[0], "l" )){
+    int led;
+    sprintf(b,"led control : %s %s",data[1],data[2]);
+    if ( strEqual(data[1],"r") ){
+      led = RED;
+    }else if ( strEqual(data[1],"g") ){
+      led = GREEN;
+    }else if ( strEqual(data[1],"y") ){
+      led = YELLOW;
+    }else{
+      logln("Unknow led");
+    }
+    if ( atoi(data[2]) == 0 || atoi(data[2]) == 1 ) {
+      digitalWrite(led,atoi(data[2]));
+    }
+  }else if( strEqual(data[0],"m" ) ){
+    if(strEqual(data[1],"t")){
+      int t = getDhtTemperature();
+      sprintf(b,"temperature:%d",t);
+      visualThreshold("t",t);
+      Serial.println(b);
+    }
   }else{
-    logln(" > Unknown command");
+    logln("Unknown command");
   }
   clearMessageBuffer();
   clearData();
 }
 
+void visualThreshold(char* sensor,int value){
+
+  char buffer[50];
+  
+  if ( !USELEDS ){
+    return;
+  }
+  
+  int warning = -1;
+  int critical = -1;
+  
+  
+  
+  if ( strEqual(sensor,"t")){
+    warning = 0;
+    critical = 1;
+  } 
+
+  sprintf(buffer,"threshold %s warning = %d",sensor,thresholds[warning]);
+  logln(buffer);
+  
+  if (warning < 0 && critical < 0 ){
+    return;
+  }
+  
+  boolean aWarning = false;
+  boolean aCritical = false;
+  
+  if (thresholds[warning] != -9999){
+    if ( value >= thresholds[warning] ) aWarning = true;
+  }
+  
+  if (thresholds[critical] != -9999){
+    if ( value >= thresholds[critical] ) aCritical = true;
+  }
+
+  if( aWarning && !aCritical ){
+    setleds(0,1,0);
+  }else if( aCritical ){
+    setleds(1,0,0);
+  }else if( !aWarning && !aCritical ){
+    setleds(0,0,1); 
+  }else{
+    setleds(0,0,0); 
+  }
+  
+}
 
 /*****************************************************************
 *
@@ -122,9 +207,9 @@ void processCommand(){
 // Active / Deactivate debug mode 
 boolean setDebug(boolean debug){
   DEBUG = debug;  
-  log(" > Debug mode : ");
-  if (debug) logln("on");
-  if (!debug) logln("off");
+//  log("Debug mode : ");
+//  if (debug) logln("on");
+//  if (!debug) logln("off");
   return true;
 }
 // check a sensor is present by getting data from it
@@ -154,7 +239,7 @@ void setThreshold(char sensor, char threshold, int value){
   int p1 = -1;
   char code[] = { sensor, threshold, '\0' };
   
-  logln(" > Saving threshold");  
+  logln("Saving threshold");  
 
   if ( strEqual(code,"tw") ) p1 = 0;
   if ( strEqual(code,"tc") ) p1 = 1;
@@ -166,19 +251,19 @@ void setThreshold(char sensor, char threshold, int value){
   char b[10];
   sprintf(b,"%d",p1);
   
-  log(" > code is : ");
+  log("code is : ");
   log(code);
   log(", position is : ");
   logln(b);
   
   if ( p1 >= 0 ){
-    log(" > Set Threshold : ");
+    log("Set Threshold : ");
     sprintf(b,"%d",value);
     logln(b);
     thresholds[p1] = value;
     //EEPROM.write(p1,(bytye)value);
   }else{
-    logln(" > Error while writing threshold value"); 
+    logln("Error while writing threshold value"); 
   }
   
 }
@@ -193,17 +278,20 @@ boolean strEqual(char* str1, char* str2){
 }
 
 void logln(char* dlog){
-  log(dlog);
-  log("\n");
+  if(DEBUG){
+    log(dlog);
+    log("\n");
+  }
+}
+
+void log(char* dlog){
+  if (DEBUG) Serial.print(dlog);  
 }
 
 void eof(){
   Serial.write("\0");
 }
 
-void log(char* dlog){
-  if (DEBUG) Serial.print(dlog);  
-}
 
 int convertThresholdValue(char* svalue){
   int threshold = 0;
@@ -211,6 +299,34 @@ int convertThresholdValue(char* svalue){
   while ( svalue[s] != '\0' ) s++;
   return atoi(svalue);
 }
+
+// set leds on or off in one line
+// values are 0 = off, 1 = on, 2 = unchanged
+void setleds(int red, int yellow, int green){
+  if ( USELEDS){
+    if (red == 0 || red == 1) digitalWrite(RED, red);
+    if (yellow == 0 || yellow == 1) digitalWrite(YELLOW, yellow);
+    if (green == 0 || green == 1) digitalWrite(GREEN, green);
+  }else{
+      digitalWrite(RED, LOW);
+      digitalWrite(YELLOW, LOW);    
+      digitalWrite(GREEN, LOW);          
+  }
+}
+
+
+// read temperature from dhtXX
+int getDhtTemperature(){
+  float t = dht.readTemperature();
+  if (isnan(t)) {
+    return -9999;
+  } else {
+    return (int)t;
+  }
+}
+
+  
+
 
 /*****************************************************************
  * 
@@ -281,14 +397,20 @@ void serialEvent(){
  ******************************************************************/
 
 void setup(){
-  Serial.begin(9600);
+  Serial.begin(BAUDRATE);
+  pinMode(RED, OUTPUT);  
+  pinMode(GREEN, OUTPUT);  
+  pinMode(YELLOW, OUTPUT);    
+  
+  dht.begin();  
+  
   clearData();
   clearMessageBuffer();
 }
 
 void loop(){
   if ( messageComplete ){
-    log(" > Message Complete : ");
+    log("Message Complete : ");
     logln(message);
     // you've got a message !
     splitMessage();
