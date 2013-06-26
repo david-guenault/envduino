@@ -146,6 +146,7 @@ void processCommand(){
   }else{
     logln("Unknown command");
   }
+  eof();
   clearMessageBuffer();
   clearData();
 }
@@ -219,21 +220,10 @@ boolean checkSensor(char sensor){
 
 // set a sensor threshold
 void setThreshold(char sensor, char threshold, int value){
-  
   /*
   * sensor (t,h,p)
   * threshold (w,c)
   * value (int threshold value)
-  */
-  
-  /*
-  * eeprom storage model
-  *  2 bytes -> warning temperature
-  *  2 bytes -> critical temperature
-  *
-  * t(w,c) : 2 bytes (0,1) thresholds for temperature sensor
-  * t(w,c) : 2 bytes (2,3) thresholds for humidity sensor
-  * t(w,c) : 2 bytes (4,5) thresholds for pressure sensor
   */
 
   int p1 = -1;
@@ -289,7 +279,7 @@ void log(char* dlog){
 }
 
 void eof(){
-  Serial.write("\0");
+  Serial.println("EOF");
 }
 
 

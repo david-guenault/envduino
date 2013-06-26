@@ -40,7 +40,7 @@ class EnvduinoSerial(Process):
     serial=None
     debug=False
 
-    def __init__(self,port="/dev/ttyACM0",baudrate=9600,timeout=1,command=None,result=None):
+    def __init__(self,port="/dev/ttyACM1",baudrate=9600,timeout=1,command=None,result=None):
         multiprocessing.Process.__init__(self)  
         self.port = port
         self.baudrate = baudrate
@@ -48,10 +48,9 @@ class EnvduinoSerial(Process):
         self.qresult = result
 
     def log(self,message):
-        message = "\n%s\n" % (message.strip())
-        sys.stdout.write(message)
-        sys.stdout.flush()        
-        #self.qresult.put(message)
+        if message[-1:] == "\n":
+            message=messge[:-1]
+        self.qresult.put(message)
 
     def debug(self,message):
         message = message.strip()
@@ -119,13 +118,12 @@ class EnvduinoSerial(Process):
                         # buffer += self.serial.read(1)
                         buffer += self.serial.readline()
                         if len(buffer) > 0:
-                            # self.debug("Receiving data %d" % (len(buffer)))
                             if buffer[-1:] == '\n':
-                                self.log(buffer)
-                                # self.qresult.put(buffer)
-                                buffer=""
+                                buffer=buffer[:-1]
+                                self.qresult.put(buffer)
                         else:
                             pass
+
 
 class EnvduinoShell(cmd.Cmd):
     prompt = "> "
@@ -144,9 +142,6 @@ class EnvduinoShell(cmd.Cmd):
 
     def emptyline(self):
         return
-
-    def postloop(self):
-        print
 
     def check_port(self,port):
         '''
@@ -201,7 +196,7 @@ class EnvduinoShell(cmd.Cmd):
                 baudrate = self.baudrate
                 print "Using last defined port and baudrate (%s,%s)" % (port, baudrate)
             else:
-                port = "/dev/ttyACM0"
+                port = "/dev/ttyACM1"
                 baudrate = 9600
                 print "Using default port and baudrate (%s,%s)" % (port, baudrate)
         else:
@@ -282,6 +277,21 @@ class EnvduinoShell(cmd.Cmd):
 
         if line != "":
             self.qcommand.put(line)
+
+    def postcmd(stop,line):
+        line = ""
+        data = []
+        print line
+        print stop
+        # while not line=="EOF":
+        #     try:
+        #         line = self.qresult.get()
+        #         sys.stdout.write(line+"\n")
+        #         sys.stdout.flush()
+        #     except:
+        #         pass
+
+        # print '\n'.join(data)
 
     def do_temperature(self,line=""):
         '''
