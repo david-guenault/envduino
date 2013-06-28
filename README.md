@@ -9,7 +9,39 @@
 
 ## Envduino prototype wiring
 
+### DHT22 
 
+  DHT22 come with 4 pins from left to right when facing the grid
+  
+  ```
+
+    DHT22                       ARDUINO MEGA 2560
+
+    1 - VCC (3 to 5V)   -->     PIN 3.3V 
+    2 - Data Out        -->     PIN 2 (this can be changed in the arduino sketch)
+    3 - Not connected
+    4 - Ground          -->     GROUND PIN
+
+  ```
+
+  Also connect a 10k resistor between DHT22's VCC AND DATA pins
+
+### BMP085
+
+  There are 7 pins from left to right (1 to 7). This is an i2c module. 
+
+```
+
+    BMP085                      ARDUINO MEGA 2560
+
+    1 - 5V             
+    2 - 3.3V            -->     3.3V
+    3 - GROUND          -->     Ground
+    4 - SDA             -->     PIN 43 SDA
+    5 - SCL             -->     PIN 42 SCL
+    6 - XCLR
+    7 - EOC
+```
 
 ## Envduino serial commands
 
@@ -62,3 +94,12 @@
  * Yellow: WARNING
  * Red: CRITICAL
 
+## Where to buy parts
+
+  I bought everything on amazon (no pub but it was cheaper)
+
+  * BMP085 pressure, elevation and temperature sensor (http://www.amazon.fr/gp/product/B0090XB5GQ/ref=oh_details_o02_s00_i00?ie=UTF8&psc=1)
+  * DHT22 humidity and tempertature sensor (http://www.amazon.fr/gp/product/B005A9KJ4I/ref=oh_details_o04_s00_i00?ie=UTF8&psc=1)
+  * Ethernet Shield (http://www.amazon.fr/gp/product/B00D6BGCO8/ref=oh_details_o03_s00_i00?ie=UTF8&psc=1)
+  * Arduino mega clone (http://www.amazon.fr/Arduino-MEGA-2560-Board-Conseil/dp/B00C04P9VO/ref=sr_1_17?s=electronics&ie=UTF8&qid=1372398504&sr=1-17&keywords=arduino+mega)
+  * 10k resistor
