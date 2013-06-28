@@ -1,17 +1,19 @@
-Envuino Project
+# Envuino Project
 
-Goals
+## Goals
 
-The envduino module
+### Thresholds
 
-Serial command référence
+#### Visual status indicator
 
-Thresholds
+ Visual status is a way to define if mesured sensor values are within bounds or not by colored leds. 
 
-Setting visual thresholds
+ There are 3 leds on the project (red,yellow,gree). Each led is a visual status indicator. 
+ * Green: OK
+ * Yellow: WARNING
+ * Red: CRITICAL
 
-    Visual threshold is a way to define if mesured sensor values are within bounds or not by colored leds. 
-    There are three leds
+ Settings thresholds is done through the envduino shell tool or through arduino serial console.
 
     syntax : t;[s];[t];[v]
     t define that the current command is a threshold setting command
