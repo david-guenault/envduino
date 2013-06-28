@@ -77,7 +77,8 @@ class EnvduinoSerial(Process):
 
         while True:
             if not self.serial:
-                self.debug("No serial next try in 2 seconds")
+                system.stdout.write("No serial next try in 2 seconds\n")
+                system.stdout.flush()
                 time.sleep(2)
                 self.connect()
                 pass
@@ -116,11 +117,13 @@ class EnvduinoSerial(Process):
                     else:
                         # read serial buffer until getting a new line and put result in queue
                         # buffer += self.serial.read(1)
-                        buffer += self.serial.readline()
+                        buffer += self.serial.read(1)
                         if len(buffer) > 0:
                             if buffer[-1:] == '\n':
                                 buffer=buffer[:-1]
-                                self.qresult.put(buffer)
+                            if buffer[-3:] == 'EOF':                                
+                                self.qresult.put(buffer)                                
+                                buffer=""
                         else:
                             pass
 
@@ -141,7 +144,7 @@ class EnvduinoShell(cmd.Cmd):
 
 
     def emptyline(self):
-        return
+        pass
 
     def check_port(self,port):
         '''
@@ -278,11 +281,9 @@ class EnvduinoShell(cmd.Cmd):
         if line != "":
             self.qcommand.put(line)
 
-    def postcmd(stop,line):
+    def postcmd(self,stop,line):
         line = ""
         data = []
-        print line
-        print stop
         # while not line=="EOF":
         #     try:
         #         line = self.qresult.get()
@@ -290,8 +291,6 @@ class EnvduinoShell(cmd.Cmd):
         #         sys.stdout.flush()
         #     except:
         #         pass
-
-        # print '\n'.join(data)
 
     def do_temperature(self,line=""):
         '''

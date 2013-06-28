@@ -10,7 +10,8 @@ Thresholds
 
 Setting visual thresholds
 
-    Visual threshold is a way to define if mesured sensor values are within bounds or not by displaying colored leds. 
+    Visual threshold is a way to define if mesured sensor values are within bounds or not by colored leds. 
+    There are three leds
 
     syntax : t;[s];[t];[v]
     t define that the current command is a threshold setting command

@@ -83,22 +83,22 @@ int thresholds[6] = {-9999,-9999,-9999,-9999,-9999,-9999};
 
 void processCommand(){
   char b[255];  
-  log("Processing command : ");
+  //log("Processing command : ");
   if (strEqual(data[0], "t")){ // process threshold command
-    logln("set threshold");
+    //logln("set threshold");
     if( (strEqual(data[1], "t")) || (strEqual(data[1], "h")) || (strEqual(data[1], "p")) || (strEqual(data[1], "e")) ){ // verify sensor type
-      sprintf(b,"Sensor : %s",data[1]);
-      logln(b);
+      //sprintf(b,"Sensor : %s",data[1]);
+      //logln(b);
       if( (strEqual(data[2],"w")) || (strEqual(data[2],"c")) ){
-        sprintf(b,"threshold type : %s",data[2]);
-        logln(b);
+        //sprintf(b,"threshold type : %s",data[2]);
+        //logln(b);
         int ivalue = atoi(data[3]);
         setThreshold(data[1][0],data[2][0],ivalue);
       }else{
-        logln("Invalid threshold type (should be w or c)");
+        //logln("Invalid threshold type (should be w or c)");
       }
     }else{
-      logln("Invalid sensor");
+      //logln("Invalid sensor");
     }
   }else if ( strEqual(data[0], "d")) {
     if( (strEqual(data[1],"0")) || (strEqual(data[1],"1")) ){
@@ -107,20 +107,21 @@ void processCommand(){
       if( strEqual(data[1],"1") ) debug = true;
       setDebug(debug);
       char b[30];
-      sprintf(b,"Setting debug mode to : %s\n",data[1]);
-      logln(b);
+      //sprintf(b,"Setting debug mode to : %s\n",data[1]);
+      //logln(b);
     }else{
-      log("Unknown debug mode :");
-      logln(data[1]);
+      //log("Unknown debug mode :");
+      //logln(data[1]);
     }
   }else if ( strEqual(data[0], "w")) {
-    logln("Save to eeprom");
+    //logln("Save to eeprom");
   } else if ( strEqual(data[0], "p")) {
-    Serial.println("pong");
+    Serial.print("pong\n");
   }else if ( strEqual(data[0], "r")) {
-    logln("read configuration : ");
+    //logln("read configuration : ");
     sprintf(b, "Temperature : w=%d, c=%d | Humidity : w=%d,c=%d | Pressure : w=%d,c=%d",thresholds[0],thresholds[1],thresholds[2],thresholds[3],thresholds[4],thresholds[5]);
-    Serial.println(b);  
+    Serial.print(b);  
+    Serial.print('\n');
   }else if ( strEqual(data[0], "l" )){
     int led;
     sprintf(b,"led control : %s %s",data[1],data[2]);
@@ -131,7 +132,7 @@ void processCommand(){
     }else if ( strEqual(data[1],"y") ){
       led = YELLOW;
     }else{
-      logln("Unknow led");
+      //logln("Unknow led");
     }
     if ( atoi(data[2]) == 0 || atoi(data[2]) == 1 ) {
       digitalWrite(led,atoi(data[2]));
@@ -141,10 +142,11 @@ void processCommand(){
       int t = getDhtTemperature();
       sprintf(b,"temperature:%d",t);
       visualThreshold("t",t);
-      Serial.println(b);
+      Serial.print(b);
+      Serial.print('\n');
     }
   }else{
-    logln("Unknown command");
+    //logln("Unknown command");
   }
   eof();
   clearMessageBuffer();
@@ -169,34 +171,32 @@ void visualThreshold(char* sensor,int value){
     critical = 1;
   } 
 
-  sprintf(buffer,"threshold %s warning = %d",sensor,thresholds[warning]);
-  logln(buffer);
+  //sprintf(buffer,"threshold %s warning = %d",sensor,thresholds[warning]);
+  //logln(buffer);
   
-  if (warning < 0 && critical < 0 ){
-    return;
+  if (warning > 0 && critical > 0 ){
+  
+    boolean aWarning = false;
+    boolean aCritical = false;
+    
+    if (thresholds[warning] != -9999){
+      if ( value >= thresholds[warning] ) aWarning = true;
+    }
+    
+    if (thresholds[critical] != -9999){
+      if ( value >= thresholds[critical] ) aCritical = true;
+    }
+  
+    if( aWarning && !aCritical ){
+      setleds(0,1,0);
+    }else if( aCritical ){
+      setleds(1,0,0);
+    }else if( !aWarning && !aCritical ){
+      setleds(0,0,1); 
+    }else{
+      setleds(0,0,0); 
+    }
   }
-  
-  boolean aWarning = false;
-  boolean aCritical = false;
-  
-  if (thresholds[warning] != -9999){
-    if ( value >= thresholds[warning] ) aWarning = true;
-  }
-  
-  if (thresholds[critical] != -9999){
-    if ( value >= thresholds[critical] ) aCritical = true;
-  }
-
-  if( aWarning && !aCritical ){
-    setleds(0,1,0);
-  }else if( aCritical ){
-    setleds(1,0,0);
-  }else if( !aWarning && !aCritical ){
-    setleds(0,0,1); 
-  }else{
-    setleds(0,0,0); 
-  }
-  
 }
 
 /*****************************************************************
@@ -208,9 +208,9 @@ void visualThreshold(char* sensor,int value){
 // Active / Deactivate debug mode 
 boolean setDebug(boolean debug){
   DEBUG = debug;  
-//  log("Debug mode : ");
-//  if (debug) logln("on");
-//  if (!debug) logln("off");
+//  //log("Debug mode : ");
+//  if (debug) //logln("on");
+//  if (!debug) //logln("off");
   return true;
 }
 // check a sensor is present by getting data from it
@@ -229,7 +229,7 @@ void setThreshold(char sensor, char threshold, int value){
   int p1 = -1;
   char code[] = { sensor, threshold, '\0' };
   
-  logln("Saving threshold");  
+  //logln("Saving threshold");  
 
   if ( strEqual(code,"tw") ) p1 = 0;
   if ( strEqual(code,"tc") ) p1 = 1;
@@ -240,22 +240,22 @@ void setThreshold(char sensor, char threshold, int value){
 
   char b[10];
   sprintf(b,"%d",p1);
+  eof();
   
-  log("code is : ");
-  log(code);
-  log(", position is : ");
-  logln(b);
+  //log("code is : ");
+  //log(code);
+  //log(", position is : ");
+  //logln(b);
   
   if ( p1 >= 0 ){
-    log("Set Threshold : ");
-    sprintf(b,"%d",value);
-    logln(b);
+    //log("Set Threshold : ");
+    //sprintf(b,"%d",value);
+    //logln(b);
     thresholds[p1] = value;
     //EEPROM.write(p1,(bytye)value);
   }else{
-    logln("Error while writing threshold value"); 
+    //logln("Error while writing threshold value"); 
   }
-  
 }
 
 // check equality of two char arrays
@@ -269,8 +269,8 @@ boolean strEqual(char* str1, char* str2){
 
 void logln(char* dlog){
   if(DEBUG){
-    log(dlog);
-    log("\n");
+    //log(dlog);
+    //log("\n");
   }
 }
 
@@ -279,7 +279,7 @@ void log(char* dlog){
 }
 
 void eof(){
-  Serial.println("EOF");
+  Serial.print("EOF\n");
 }
 
 
@@ -400,9 +400,6 @@ void setup(){
 
 void loop(){
   if ( messageComplete ){
-    log("Message Complete : ");
-    logln(message);
-    // you've got a message !
     splitMessage();
     processCommand();
     messageComplete = false; 
