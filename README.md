@@ -94,7 +94,22 @@
  * Yellow: WARNING
  * Red: CRITICAL
 
-## Where to buy parts
+## Parts
+
+### List
+
+
+ * 1		10k Ω Resistance				
+ * 3		330 Ω Resistance	
+ * 1		DHT22 Humidity and Temperature Sensor	
+ * 1		Arduino Mega	
+ * 1		BMP085 Breakout (pressure and elevation)	
+ * 1		Yellow LED 
+ * 1		Red LED 
+ * 1		Green LED 
+
+
+### Where to buy 
 
   I bought everything on amazon (no pub but it was cheaper)
 
