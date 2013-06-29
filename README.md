@@ -43,6 +43,10 @@
     7 - EOC
 ```
 
+### Schematic breadboard
+
+
+
 ## Envduino serial commands
 
 ### Checking envduino is alive
