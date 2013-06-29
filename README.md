@@ -111,10 +111,16 @@
 
 ### Where to buy 
 
-  I bought everything on amazon (no pub but it was cheaper)
-
+  I bought everything on amazon (no pub but it was cheaper). 
+  
   * BMP085 pressure, elevation and temperature sensor (http://www.amazon.fr/gp/product/B0090XB5GQ/ref=oh_details_o02_s00_i00?ie=UTF8&psc=1)
   * DHT22 humidity and tempertature sensor (http://www.amazon.fr/gp/product/B005A9KJ4I/ref=oh_details_o04_s00_i00?ie=UTF8&psc=1)
   * Ethernet Shield (http://www.amazon.fr/gp/product/B00D6BGCO8/ref=oh_details_o03_s00_i00?ie=UTF8&psc=1)
   * Arduino mega clone (http://www.amazon.fr/Arduino-MEGA-2560-Board-Conseil/dp/B00C04P9VO/ref=sr_1_17?s=electronics&ie=UTF8&qid=1372398504&sr=1-17&keywords=arduino+mega)
   * 10k resistor
+
+  You can also find the parts at the following websites
+  
+  * http://www.adafruit.com (US)
+  * http://www.arduino.cc (for arduino mega and ethernet shield) (EU)
+  * http://https://www.sparkfun.com (US)
