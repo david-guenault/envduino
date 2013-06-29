@@ -45,7 +45,7 @@
 
 ### Schematic breadboard
 
-
+![alt tag](https://raw.github.com/david-guenault/envduino/master/schematic/envduino_bb.png)
 
 ## Envduino serial commands
 
