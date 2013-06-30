@@ -1,4 +1,4 @@
-# Envuino Project
+# Envduino Project
 
 ## Goals
 
