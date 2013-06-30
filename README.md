@@ -45,7 +45,7 @@
 
 ### Schematic breadboard
 
-
+![alt tag](https://raw.github.com/david-guenault/envduino/master/schematic/envduino_bb.png)
 
 ## Envduino serial commands
 
@@ -98,6 +98,16 @@
  * Yellow: WARNING
  * Red: CRITICAL
 
+## Preparing the environment
+
+### DEBIAN/UBUNTU
+
+envduino use the following libraries (allready included in this github space).
+
+ * Adafruit DHT22 library : https://github.com/adafruit/DHT-sensor-library
+ * Adafruit BMP085 library : https://github.com/adafruit/Adafruit-BMP085-Library
+ * Arduino Makefile : https://github.com/sudar/Arduino-Makefile
+
 ## Parts
 
 ### List
@@ -128,3 +138,5 @@ You can also find the parts at the following websites
   * http://www.adafruit.com (US)
   * http://www.arduino.cc (for arduino mega and ethernet shield) (EU)
   * http://https://www.sparkfun.com (US)
+
+As an alternative you can use the sainsmart bmp085 (cheaper) from : http://www.sainsmart.com/sainsmart-bmp085-digital-pressure-sensor-module-board.html
