@@ -16,11 +16,18 @@ class SEMAPHORE {
         void yellow(int state);
         void green(int state);
         void leds(int redstate,int yellowstate, int greenstate);
+        void alarm(int state);
 
     private:
         int _red;
         int _yellow;
         int _green;
+
+        int _OK;
+        int _WARNING;
+        int _CRITICAL;
+        int _UNKNOWN;
+
 
 };
 
