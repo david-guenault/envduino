@@ -43,11 +43,17 @@
     7 - EOC
 ```
 
-### Schematic breadboard
+### Schematic 
+
+#### breadboard
 
 ![alt tag](https://raw.github.com/david-guenault/envduino/master/schematic/envduino_bb.png)
 
-## Envduino serial commands
+#### logical 
+
+![alt tag](https://raw.github.com/david-guenault/envduino/master/schematic/envduino_schema.png)
+
+## Envduino serial commands protocol
 
 ### Checking envduino is alive
 
