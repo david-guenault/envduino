@@ -23,6 +23,7 @@ bool THRESHOLDS::set(char sensor,char threshold, int value)
   */
   int p1 = -1;
 
+
   char code[] = { sensor, threshold, '\0' };
   if ( strEqual(code,"tw") ) p1 = 0;
   if ( strEqual(code,"tc") ) p1 = 1;
@@ -30,6 +31,8 @@ bool THRESHOLDS::set(char sensor,char threshold, int value)
   if ( strEqual(code,"hc") ) p1 = 3;
   if ( strEqual(code,"pw") ) p1 = 4;
   if ( strEqual(code,"pc") ) p1 = 5;
+
+
 
   if ( p1 >= 0 ){
     _thresholds[p1] = value;
