@@ -29,8 +29,8 @@ class DHT {
   boolean firstreading;
 
  public:
-  DHT(uint8_t pin, uint8_t type, uint8_t count=6);
-  void begin(void);
+  DHT();
+  void begin(uint8_t pin, uint8_t type, uint8_t count=6);
   float readTemperature(bool S=false);
   float convertCtoF(float);
   float readHumidity(void);

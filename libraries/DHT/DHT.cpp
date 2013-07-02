@@ -6,14 +6,13 @@ written by Adafruit Industries
 
 #include "DHT.h"
 
-DHT::DHT(uint8_t pin, uint8_t type, uint8_t count) {
+DHT::DHT() {}
+
+void DHT::begin(uint8_t pin, uint8_t type, uint8_t count) {
   _pin = pin;
   _type = type;
   _count = count;
   firstreading = true;
-}
-
-void DHT::begin(void) {
   // set up the pins!
   pinMode(_pin, INPUT);
   digitalWrite(_pin, HIGH);
@@ -46,7 +45,7 @@ float DHT::readTemperature(bool S) {
       return f;
     }
   }
-  Serial.print("Read fail");
+  //Serial.print("Read fail");
   return NAN;
 }
 
@@ -70,7 +69,7 @@ float DHT::readHumidity(void) {
       return f;
     }
   }
-  Serial.print("Read fail");
+  //Serial.print("Read fail");
   return NAN;
 }
 
