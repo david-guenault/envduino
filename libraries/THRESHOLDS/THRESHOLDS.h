@@ -13,7 +13,7 @@ class THRESHOLDS {
     public:
         THRESHOLDS();
         ~THRESHOLDS();
-        
+
         void pins(int red, int yellow, int green);
 
         bool set(char sensor,char threshold, int value);

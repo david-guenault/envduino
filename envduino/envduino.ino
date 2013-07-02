@@ -1,12 +1,14 @@
+#include <Arduino.h>
 #include <EEPROM.h>
 #include <DHT.h>
 #include <SEMAPHORE.h>
 #include <THRESHOLDS.h>
+#include <SENSORS.h>
 
 // DHTXX
-#define DHTPIN 28        // what pin we're connected to
-#define DHTTYPE DHT22    // DHT 22  (AM2302)
-DHT dht(DHTPIN, DHTTYPE);
+//#define DHTPIN 28        // what pin we're connected to
+//#define DHTTYPE DHT22    // DHT 22  (AM2302)
+//DHT dht(DHTPIN, DHTTYPE);
 
 // 2 dimensions char array used to store data read from serail
 const int MAX_COLS = 5; 
@@ -38,7 +40,11 @@ const int  GREEN = 26;
 const boolean  USELEDS = true;
 SEMAPHORE semaphore(RED,YELLOW,GREEN);
 
+// Thresholds management
 THRESHOLDS thresholds;
+
+// Sensors
+SENSORS sensors;
 
 
 void resetBuffer(char* buf){
@@ -53,11 +59,8 @@ void processCommand(){
   char arg2[MAX_COLS];  
   char arg3[MAX_COLS];    
   int length=0;
-  length = getField(0,command);
-  if (length > 1) { 
-    eoc(); 
-    return; 
-  }
+  
+  getField(0,command);
   
   if ( strcmp(command,"t") == 0){
     
@@ -107,15 +110,25 @@ void processCommand(){
     }
     eoc();
   }else if( strcmp(command, "m") == 0 ){
-    getField(1,arg1);
-    if(arg1 == "t"){
-      int t = getDhtTemperature();
-      int state = thresholds.check('t',t);
-      semaphore.alarm(state);
-      sprintf(b,"temperature:%d",t);
-      Serial.print(b);
+    char type[MAX_COLS];
+    int mesure;
+
+    getField(1,type);
+    sensors.mesure();
+    if ( type[0] == 't' ){
+      mesure = sensors.temperature();
+      sprintf(b,"temperature:%i",mesure);
+    }else if (type[0] == 'h'){
+      mesure = sensors.humidity();
+      sprintf(b,"humidity:%i",mesure);
+    }else{
       eoc();
+      return;
     }
+    int state = thresholds.check(*type,mesure);
+    semaphore.alarm(state);
+    Serial.print(b);
+    eoc();
   }
   clearMessageBuffer();
   clearData();
@@ -164,17 +177,6 @@ void eoc(){
 void eol(){
   // send end of line
   Serial.print(EOL);
-}
-
-
-// read temperature from dhtXX
-int getDhtTemperature(){
-  float t = dht.readTemperature();
-  if (isnan(t)) {
-    return -9999;
-  } else {
-    return (int)t;
-  }
 }
 
 /*****************************************************************
@@ -247,16 +249,18 @@ void serialEvent(){
 
 void setup(){
   Serial.begin(BAUDRATE);
+  sensors.begin();
   pinMode(RED, OUTPUT);  
   pinMode(GREEN, OUTPUT);  
   pinMode(YELLOW, OUTPUT);    
   
-  dht.begin();  
+  //dht.begin();
+ 
   
   clearData();
   clearMessageBuffer();
 }
-
+  
 void loop(){
   if ( messageComplete ){
     splitMessage();
