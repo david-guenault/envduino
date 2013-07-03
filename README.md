@@ -7,6 +7,10 @@
   
   Curently envduino only provide temperature, humidity, pressure and elevation. It should provide in the future light sensing and gaz sensing.
 
+## Included
+
+  envduino is made of a sketch file for arduino (only tested on mega and should not work en leonardo), a shell for getting values and settings preferences (saving not ready at the moment), a nagios/shinken/icinga plugin for checking environmental status and a little webapp for getting metrics and graph them.
+
 ## Envduino prototype wiring
 
 ### DHT22 
@@ -31,7 +35,6 @@
   There are 7 pins from left to right (1 to 7). This is an i2c module. 
 
 ```
-
     BMP085                      ARDUINO MEGA 2560
 
     1 - 5V             
@@ -58,8 +61,8 @@
 ### Checking envduino is alive
 
 ```
-   Syntax : p
-   Return : pong\nEOF\n
+   Syntax : ping
+   Return : pong
 ```
 
 ### Thresholds
@@ -85,13 +88,13 @@
 
 ```
     syntax : r
-    Return : 
+    Return : Temperature : w=-9999, c=-9999 | Humidity : w=-9999,c=-9999 | Pressure : w=-9999,c=-9999
 ```
 
 #### Saving 
 
 ```
-    Syntax : w
+    Syntax : w (NOT IMPLEMENTED)
     Return : 
 ```
 
@@ -104,6 +107,34 @@
  * Yellow: WARNING
  * Red: CRITICAL
 
+##### Controling leds
+
+```
+    Syntax : l;[led];[state]
+    Return : 
+
+    led should be one of the following :
+    r for red
+    y for yellow
+    g for green
+
+    state should be one of the following :
+    0 for off
+    1 for on
+```
+
+### geting sensors values
+
+```
+    Syntax : m;[sensor]
+    Return : temperature:25
+
+    sensor should be one of the following :
+    h for humidity
+    t for temperature
+    p for pressure
+```
+
 ## Preparing the environment
 
 ### DEBIAN/UBUNTU
@@ -112,8 +143,7 @@ envduino use the following libraries (allready included in this github space).
 
  * Adafruit DHT22 library : https://github.com/adafruit/DHT-sensor-library
  * Adafruit BMP085 library : https://github.com/adafruit/Adafruit-BMP085-Library
- * Arduino Makefile : https://github.com/sudar/Arduino-Makefile
-
+ 
 ## Parts
 
 ### List
