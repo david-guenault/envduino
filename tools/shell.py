@@ -318,6 +318,14 @@ class EnvduinoShell(cmd.Cmd):
         '''
         self.do_raw("m;t")
 
+    def do_humidity(self,line=""):
+        '''
+        request humidity metric
+        Syntax: humidity
+        > humidity
+        '''
+        self.do_raw("m;h")
+
     def do_ping(self,line=""):
         '''
         Check if envduino module is answering requests
