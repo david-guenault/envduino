@@ -75,8 +75,10 @@ void processCommand(){
     getField(1,arg1);
     if (strcmp(arg1,"1") == 0){
       setDebug(true);
+      Serial.println("Debug is on");
     }else if(strcmp(arg1,"0") == 0){
       setDebug(false);
+      Serial.println("Debug is off");
     }
     eoc();
   }else if ( strcmp(command,"w") == 0 ) {
