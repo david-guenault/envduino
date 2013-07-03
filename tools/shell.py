@@ -27,6 +27,10 @@ import io
 import multiprocessing
 from multiprocessing import Process, Queue
 
+# default serial port values
+def_port="/dev/ttyACM1"
+def_baudrate="9600"
+
 try:
     from serial import Serial
 except:
@@ -39,93 +43,98 @@ class EnvduinoSerial(Process):
     count = 0
     serial=None
     debug=False
+    buffer=""
 
     def __init__(self,port="/dev/ttyACM1",baudrate=9600,timeout=1,command=None,result=None):
-        multiprocessing.Process.__init__(self)  
-        self.port = port
-        self.baudrate = baudrate
+        multiprocessing.Process.__init__(self)
+
+        self.port = def_port
+        self.baudrate = def_baudrate
         self.qcommand = command 
         self.qresult = result
 
-    def log(self,message):
-        if message[-1:] == "\n":
-            message=messge[:-1]
-        self.qresult.put(message)
+        self.connect()
 
-    def debug(self,message):
-        message = message.strip()
-        if self.debug == True:
-            self.log("[DEBUG] %s" % (message))
-
-
-    def run(self):
-        buffer=""
+    def connect(self):
         try:
-            self.debug("Opening serial port")
+            self.log("Opening serial port")
             self.serial = Serial()
             self.serial.baudrate = self.baudrate
             self.serial.port = self.port
             self.serial.timeout = 2
             self.serial.open()
             if not self.serial.isOpen():
-                self.log("Unable to connect to serial port")
+                self.log("Unable to connect to serial port",force = True)
             else:
-                self.log("Connection to serial port OK")
+                self.log("Connection to serial port OK",force = True)
+            self.eoc()
         except:
-            self.log("Unable to connect to serial port")
+            self.log("Unable to connect to serial port",force = True)
+            self.eoc()
 
 
+    def log(self,message,force=False):
+        if self.debug or force:
+            self.qresult.put(message)
+
+    def eoc(self):
+        self.qresult.put("EOC")
+
+    def run(self):
         while True:
-            if not self.serial:
-                system.stdout.write("No serial next try in 2 seconds\n")
-                system.stdout.flush()
-                time.sleep(2)
-                self.connect()
-                pass
+            # always check serial available before anything
+            if not self.serial.isOpen():
+                self.log("Not connected to envduino module")
+                self.eoc()
             else:
-                # always check serial available before anything
-                if not self.serial.isOpen():
-                    pass
-                    # self.debug("Lost serial connection trying to open again")
-                    # self.serial.open()
-                else:
-                    # if a command appear in queue process command and bypass reading
-                    if not self.qcommand.empty():
-                        c = self.qcommand.get()
-                        self.debug("Command : %s" % (c))
-
-                        if c[0:5] == "debug":
-                            if c[6:] == "on":
-                                self.debug = True
-                                self.serial.write("d;1\n")                                
-                            elif c[6:] == "off":
-                                self.debug = False
-                                self.serial.write("d;0\n")
-                        elif c == "close":
-                            self.debug("Closing port")
-                            if self.serial.isOpen():
-                                self.serial.close()
-                            print "serial port closed"
-                        elif c == "open":
-                            self.debug("Openning port")
-                            self.serial.open()
+                # if a command appear in queue process command and bypass reading
+                if not self.qcommand.empty():
+                    c = self.qcommand.get()
+                    self.log("Command : %s" % (c))
+                    if c[0:5] == "debug":
+                        if c[6:] == "on":
+                            self.debug = True
+                            self.serial.write("d;1\n")                                
+                        elif c[6:] == "off":
+                            self.debug = False
+                            self.serial.write("d;0\n")
+                    elif c == "close":
+                        self.log("Closing port")
+                        if self.serial.isOpen():
+                            self.serial.close()
+                        self.log("serial port closed",force=True)
+                        self.eoc()
+                    elif c == "open":
+                        self.log("Openning port")
+                        self.serial.open()
+                        if self.serial.isOpen():
+                            self.log("serial port opened",force=True)
                         else:
-                            self.debug("Writing command %s" % (c))
-                            if c[-1:] != '\n':
-                                c += '\n'
-                            self.serial.write(c)
+                            self.log("Failed opening serial port",force=True)
+                        eoc()
                     else:
-                        # read serial buffer until getting a new line and put result in queue
-                        # buffer += self.serial.read(1)
-                        buffer += self.serial.read(1)
-                        if len(buffer) > 0:
-                            if buffer[-1:] == '\n':
-                                buffer=buffer[:-1]
-                            if buffer[-3:] == 'EOF':                                
-                                self.qresult.put(buffer)                                
-                                buffer=""
-                        else:
-                            pass
+                        self.log("Writing command %s" % (c))
+                        if c[-1:] != '\n':
+                            c += '\n'
+                        self.serial.write(c)
+                        self.poll()
+
+                else:
+                    self.poll()
+
+    def poll(self):
+        # read serial buffer until getting a new line and put result in queue
+        # buffer += self.serial.read(1)
+
+        readc = self.serial.read(3)
+        self.buffer += readc
+        if len(self.buffer) > 0:
+            if 'EOC' in self.buffer:
+                # end of communication
+                self.qresult.put(self.buffer)
+                self.buffer=""                                
+        else:
+            pass
 
 
 class EnvduinoShell(cmd.Cmd):
@@ -184,12 +193,6 @@ class EnvduinoShell(cmd.Cmd):
         port = ""
         baudrate = 0
 
-        # make sure to not connect twice ...
-        try:
-            self.serial.terminate()
-        except:
-            pass
-
         line = line.strip()
 
         if line == "":
@@ -197,33 +200,36 @@ class EnvduinoShell(cmd.Cmd):
             if self.port != "" and self.baudrate > 0:
                 port = self.port
                 baudrate = self.baudrate
-                print "Using last defined port and baudrate (%s,%s)" % (port, baudrate)
+                self.qresult.put("Using last defined port and baudrate (%s,%s)" % (port, baudrate))
             else:
-                port = "/dev/ttyACM1"
-                baudrate = 9600
-                print "Using default port and baudrate (%s,%s)" % (port, baudrate)
+                port = def_port
+                baudrate = def_baudrate
+                self.qresult.put("Using default port and baudrate (%s,%s)" % (port, baudrate))
         else:
             # parameters provided
             try:
                 (port,baudrate) = line.split(" ")
                 baudrate = int(baudrate)
-                print "Using provided port and baudrate (%s,%s)" % (port, baudrate)                
+                self.qresult.put("Using provided port and baudrate (%s,%s)" % (port, baudrate))
             except:
-                print("Invalid port and baudrate")
+                self.qresult.put("Invalid port and baudrate")
                 self.port = ""
                 self.baudrate = 0
+                self.eoc()
                 return
 
         # check if port exist
         if not self.check_port(port):
             self.port = ""
             self.baudrate = 0
+            self.eoc()
             return
 
         # only on posix os, check current user can read/write on serial port
         if not self.check_right(port):
             self.port = ""
             self.baudrate = 0
+            self.eoc()
             return
 
         # finally try to make connection
@@ -231,14 +237,21 @@ class EnvduinoShell(cmd.Cmd):
             self.serial = EnvduinoSerial(port = port, baudrate = baudrate, timeout = 2, command = self.qcommand, result = self.qresult)
             self.serial.daemon = True
             self.serial.start()
-            self.do_debug("off")
             self.port = port
             self.baudrate = baudrate
         except:        
             self.port = ""
             self.baudrate = 0
-            print "Unable to connect to serial port"
+            self.log("Unable to connect to serial port")
 
+        self.poll()
+
+    def log(self,message,force=False):
+        if self.debug or force:
+            self.qresult.put(message)
+    
+    def eoc(self):
+        self.qresult.put("EOC")
 
     def do_reset(self,line=""):
         '''
@@ -246,11 +259,8 @@ class EnvduinoShell(cmd.Cmd):
         Syntax: reset
         > reset
         '''
-        try:
-            self.serial.terminate()
-            self.do_connect()
-        except:
-            pass
+        self.log("Not implemented",force=True)
+        self.eoc()
 
     def do_debug(self,line):
         '''
@@ -263,7 +273,8 @@ class EnvduinoShell(cmd.Cmd):
         elif line == "off":
             mode = "0"
         else:
-            print "Invalid debug mode"
+            self.qresult.put("Invalid debug mode",force=True)
+            self.eoc()            
             return
 
         self.do_raw("d;%s\n" % (mode))
@@ -275,22 +286,29 @@ class EnvduinoShell(cmd.Cmd):
         > raw t;t;w;20
         '''
         if not self.serial:
-            print "Not connected"
+            self.qresult.put("Not connected")
+            self.eoc()
             return
+        self.qcommand.put(line)
+        self.poll()
 
-        if line != "":
-            self.qcommand.put(line)
 
-    def postcmd(self,stop,line):
-        line = ""
-        data = []
-        # while not line=="EOF":
-        #     try:
-        #         line = self.qresult.get()
-        #         sys.stdout.write(line+"\n")
-        #         sys.stdout.flush()
-        #     except:
-        #         pass
+    def poll(self):
+        timeout = 5
+        exit = False
+        t1 = time.time()  
+        while not exit:
+            try:
+                data = self.qresult.get(timeout=timeout)
+                sys.stdout.write(data.replace("EOC",""))
+                if not data.replace("EOC","")[-1:] == "\n":
+                    sys.stdout.write("\n")
+                sys.stdout.flush()     
+                if "EOC" in data:
+                    exit=True
+            except:
+                exit = True
+                print "Timeout after %d seconds waiting for data in queue" % timeout        
 
     def do_temperature(self,line=""):
         '''
@@ -338,11 +356,11 @@ class EnvduinoShell(cmd.Cmd):
                 for lc in p:
                     self.do_raw("l;%s;%s\n" % (lc,s))
             else:
-                print "Invalid command"
-
+                self.qresult.put("Invalid command")
+                self.eoc()
         except:
-            print("invalid led setting")
-            pass
+            self.qresult.put("invalid led setting")
+            self.eoc()
 
     def do_threshold(self,line):
         '''
@@ -359,11 +377,13 @@ class EnvduinoShell(cmd.Cmd):
             try:
                 (sensor,type,value) = line.split(" ")
             except:
-                print("invalid threshold definition")
+                self.qresult.put("invalid threshold definition")
+                self.eoc()
                 return
 
             if not sensor in ("temperature","humidity","pressure"):
-                print "Invalid sensor"
+                self.qresult.put("Invalid sensor")
+                self.eoc()
                 return
             else:
                 if sensor == "temperature":
@@ -374,7 +394,8 @@ class EnvduinoShell(cmd.Cmd):
                     sensor = "p"
 
             if not type in ("warning","critical"):
-                print "Invalid threshold type"
+                self.qresult.put("Invalid threshold type")
+                self.eoc()
                 return
             else:
                 if type == "warning":
@@ -383,7 +404,8 @@ class EnvduinoShell(cmd.Cmd):
                     type = "c"
 
             if not value.isdigit():
-                print "Invalid threshold value"
+                self.qresult.put("Invalid threshold value")
+                self.eoc()
                 return
             else:
                 value = int(value)
