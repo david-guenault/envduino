@@ -426,7 +426,8 @@ class EnvduinoShell(cmd.Cmd):
         Syntax: close
         > close
         '''
-        self.do_raw("close")
+        self.log("Not implemented",force=True)
+        self.eoc()
 
     def do_quit(self,line=""):
         '''
