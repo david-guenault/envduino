@@ -56,6 +56,37 @@
 
 ![alt tag](https://raw.github.com/david-guenault/envduino/master/schematic/envduino_schema.png)
 
+## Envduino Shell
+
+This shell allow to test envduino module and configure envduino module settings
+
+```
+------------------------------------------------
+
+Welcome to Envduino Shell
+
+(c) David GUENAULT
+
+david.guenault@gmail.com
+
+Released under GNU Affero General Public License
+
+http://www.gnu.org/licenses
+
+------------------------------------------------
+
+
+> connect
+Using default port and baudrate (/dev/ttyACM1,9600)
+Connection to serial port OK
+
+> temperature
+temperature:24
+> humidity
+humidity:55
+> 
+```
+
 ## Envduino serial commands protocol
 
 ### Checking envduino is alive
