@@ -18,5 +18,5 @@ def wdelete(name=''):
     response.content_type = 'application/json'
     return json.dumps({ "success" : False, "paths" : [], "error" : "not implemented yet" })
 
-
-run(host='localhost', port=8181)
+if __name__ == "__main__":
+    run(host='localhost', port=8181)
