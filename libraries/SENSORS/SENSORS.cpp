@@ -16,12 +16,14 @@ SENSORS::~SENSORS()
 }
 
 void SENSORS::begin(){
+  _bmp085.calibration();
   _dht.begin(DHTPIN,DHTTYPE);  
 }
 
 void SENSORS::mesure(){
   _humidity = (int)_dht.readHumidity();
   _temperature = (int)_dht.readTemperature();  
+  _pressure = (long)_bmp085.getPressure();
 }
 
 int SENSORS::temperature()
@@ -34,8 +36,10 @@ int SENSORS::humidity()
   return _humidity;
 }
 
-int SENSORS::pressure()
+long SENSORS::pressure()
 {
-  return NAN;
+  return _pressure;
 }
+
+
 

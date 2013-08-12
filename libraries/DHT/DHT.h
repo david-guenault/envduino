@@ -20,6 +20,14 @@ written by Adafruit Industries
 #define DHT21 21
 #define AM2301 21
 
+
+#ifndef DHTPIN
+    #define DHTPIN 28        // sensor data pin 
+#endif
+#ifndef DHTTYPE
+    #define DHTTYPE DHT22    // DHT 22  (AM2302)
+#endif
+
 class DHT {
  private:
   uint8_t data[6];

@@ -1,14 +1,19 @@
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <Wire.h>
 #include <DHT.h>
+#include <BMP085.h>
 #include <SEMAPHORE.h>
 #include <THRESHOLDS.h>
 #include <SENSORS.h>
 
-// DHTXX
-//#define DHTPIN 28        // what pin we're connected to
-//#define DHTTYPE DHT22    // DHT 22  (AM2302)
-//DHT dht(DHTPIN, DHTTYPE);
+#define DHTPIN 28
+#define DHTTYPE DHT22
+
+#define BMP085_ADDRESS 0x77
+#define BMP085_OSS 0
+#define BMP085_PRESSURE_SEA_LEVEL 102100
+
 
 // 2 dimensions char array used to store data read from serail
 const int MAX_COLS = 5; 
@@ -46,7 +51,6 @@ THRESHOLDS thresholds;
 // Sensors
 SENSORS sensors;
 
-
 void resetBuffer(char* buf){
   int i = 0;
   for (i = 0;i<BUFSIZE+3;i++) buf[i] = '\0';
@@ -59,6 +63,8 @@ void processCommand(){
   char arg2[MAX_COLS];  
   char arg3[MAX_COLS];    
   int length=0;
+  
+  logln("process command");
   
   getField(0,command);
   
@@ -114,7 +120,7 @@ void processCommand(){
   }else if( strcmp(command, "m") == 0 ){
     char type[MAX_COLS];
     int mesure;
-
+    mesure = 0;
     getField(1,type);
     sensors.mesure();
     if ( type[0] == 't' ){
@@ -123,6 +129,9 @@ void processCommand(){
     }else if (type[0] == 'h'){
       mesure = sensors.humidity();
       sprintf(b,"humidity:%i",mesure);
+    }else if (type[0] == 'p'){
+      long pressure = (long)(sensors.pressure()*0.01);
+      sprintf(b,"pressure:%ld",pressure);
     }else{
       eoc();
       return;
@@ -237,6 +246,7 @@ void serialEvent(){
     message[index] = (char)Serial.read();
     if (message[index] == '\n' || message[index] == '\r') {
       messageComplete = true; 
+      logln(message);
       break;
     } 
     index++;
@@ -250,6 +260,7 @@ void serialEvent(){
  ******************************************************************/
 
 void setup(){
+  logln("Start setup");
   Serial.begin(BAUDRATE);
   sensors.begin();
   pinMode(RED, OUTPUT);  
@@ -261,10 +272,12 @@ void setup(){
   
   clearData();
   clearMessageBuffer();
+  logln("End setup");
 }
   
 void loop(){
   if ( messageComplete ){
+    logln("Message is complete");
     splitMessage();
     processCommand();
     messageComplete = false; 
